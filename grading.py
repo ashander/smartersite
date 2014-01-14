@@ -7,10 +7,22 @@ import string
 from subprocess import call
 import tempfile
 
-re_studentid_file = re.compile(r",[0-9]*,")
-#re_studentid_dir = re.compile(r"\([0-9]*\)")
-
+#re_studentid_file = re.compile(r",[0-9]*,")
 re_studentid = re.compile(r"[0-9]{7,9}")
+
+def matchdir (string, dirlist):
+    '''
+    return full entry of dirlist that
+    contains a partial match for string s
+    or
+    False
+    '''
+    outlist = [d for d in dirlist if d.find(string) != -1]
+    if len(outlist) == 0:
+        return False
+    else:
+        return outlist.pop()
+    
 
 def main():
     try:
@@ -33,25 +45,25 @@ def main():
         ID = re_studentid.search(l,)
         fout.writelines(l.rstrip()) 
         if ID:
-
-            
-            dir_matches = [re.search(ID.group(), s) for s in student_dirs]
-            td = [d for d in dir_matches if d] # should be length 1 list with only match
-            if len(td) != 1:
-                "ERROR %r matches in directories, expected 1" % len(td)
-            dir_index = dir_matches.index(td[0]) # loc in student_dirs of match
-
-            os.chdir(student_dirs[dir_index])
+            curstudent = matchdir(ID.group(), student_dirs)
+            os.chdir(curstudent)
 
             dircont = os.listdir(os.getcwd())
-            submatch = [re.search('Submission', d) for d in dircont]
-            thematch = [s for s in submatch if s]
-            if len(thematch) != 1:
-                "ERROR %r matches in Submission directories, expected 1" % len(td)
-            theindex = submatch.index(thematch[0])
-            os.system("open "+ dircont[theindex] + "/*" )
+            submissionsdir = matchdir('Submission', dircont)
+            subs = os.listdir(submissionsdir)
             
-            comment_header = "Comments on " + hwname + " for " + student_dirs[dir_index]
+            filestoopen  = [f for f in subs if f.find('.pdf') != -1 or f.find('.doc') != -1]
+            for f in filestoopen:
+                filepath = os.path.join(os.getcwd(), submissionsdir, f)
+                if sys.platform.startswith('darwin'):
+                    call(('open', filepath))
+                elif os.name == 'nt':
+                    os.startfile(filepath)
+                elif os.name == 'posix':
+                    call(('xdg-open', filepath))
+
+            
+            comment_header = "Comments on " + hwname + " for " + curstudent 
             comment_footer = "- graded by " + gradername
 
             output = []
