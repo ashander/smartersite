@@ -21,12 +21,13 @@ def matchdir (string, dirlist):
         return False
     else:
         return outlist.pop()
+
     
-def openpdfanddoc(listoffiles):
+def openpdfanddoc(dir, listoffiles):
     ''' open pdf and doc files in teh submission directory'''
     filestoopen  = [f for f in listoffiles if f.find('.pdf') != -1 or f.find('.doc') != -1]
     for f in filestoopen:
-        filepath = os.path.join(os.getcwd(), submissionsdir, f)
+        filepath = os.path.join(os.getcwd(), dir, f)
         if sys.platform.startswith('darwin'):
             call(('open', filepath))
         elif os.name == 'nt':
@@ -34,7 +35,29 @@ def openpdfanddoc(listoffiles):
         elif os.name == 'posix':
             call(('xdg-open', filepath))
 
+def writecomments(comment_header):
+    ''' until user types q/Q/enter, solicit comments and put them on new 'lines'
+    of the output 'file' (actually a list)
+    print the full file with each new line
+    '''
+    output = []
+    comment = comment_header + '\n'
+    while (comment != 'Q') and (comment != 'q') and (comment != ''):
+        output.append(comment + '\n')
+        for o in output:
+            print o,
+        comment = raw_input("Type a comment (or q/Q/enter to finish and assign a grade)\n")
+    return output
 
+def getgrade(graderequeststring):
+    ''' get grade as string ''' 
+    grade = raw_input(graderequeststring)
+    ## [todo] - handle non convertable input
+    if grade != '':
+        while float(grade) > 5.0:
+            grade = raw_input("Grade must be less than 5. What is the grade X/5?\n")
+    return grade
+           
 def main():
     '''
     python grading.py [infile] [gradefile] [hwname] [gradername] [exitfile='notgraded.csv']
@@ -68,79 +91,80 @@ def main():
 
     EDITOR = os.getenv('EDITOR')
     COMMENTFILE = 'comments.txt'
-    
-    f = open(infile,'r')
-    tograde = f.readlines()
-    f.close()
 
-    fout = open(gradefile,'w')
-    f2 = open(exitfile, 'w')
+    comment_footer = "- graded by " + gradername
+
+    
+    tgf = open(infile,'r')
+    tograde = tgf.readlines()
+    tgf.close()
+
+    gf = open(gradefile,'w')
+    ngf = open(exitfile, 'w')
 
     keepgoing = True
     for l in tograde:
         ID = re_studentid.search(l,)
-        if keepgoing:
-            fout.writelines(l.rstrip())
-        if (not keepgoing) or (not ID):
-            f2.writelines(l)
+        if (not ID) and keepgoing:
+            ngf.writelines(l)
+            gf.writelines(l)
+        else:
+            if not keepgoing:
+                ngf.writelines(l)
+
         if ID and keepgoing:
+            gf.writelines(l.rstrip())
             curstudent = matchdir(ID.group(), student_dirs)
             os.chdir(curstudent)
 
             submissionsdir = matchdir('Submission', os.listdir(os.getcwd()))
             subdirfiles = os.listdir(submissionsdir)
 
-            openpdfanddoc(subdirfiles)
+            openpdfanddoc(submissionsdir, subdirfiles)
             
             comment_header = "Comments on " + hwname + " for " + curstudent 
-            comment_footer = "- graded by " + gradername
 
-            output = []
-            comment = comment_header + '\n'
-            while (comment != 'Q') and (comment != 'q') and (comment != ''):
-                output.append(comment + '\n')
-                for o in output:
-                    print o,
-                comment = raw_input("Type a comment (or q/Q/enter to finish and assign a grade)\n")
-
-            grade = raw_input("What is the grade X/5?\n")
-            ## no coverage for non convertable input
-            while float(grade) > 5.0:
-                grade = raw_input("Grade must be less than 5. What is the grade X/5?\n")
-            output.append("\nGrade is "+ grade + "/5.0" + '\n')
+            output = writecomments(comment_header)
+            grade = getgrade("What is the grade X/5? (If no grade at this time hit enter.)\n")
+            
+            output.append("\nGrade is "+ grade + "/5.0" + '\n')            
             output.append('\n' + comment_footer + '\n')
+
             cmt = open(COMMENTFILE, 'r+')
-            cmt.writelines(output)
-            cmt.flush()
-            cmt.close()
             print "Here is what your commentfile looks like:\n"
             print "---------------beginfile-----------"
             for o in output:
                 print o,
+                cmt.writelines(o)
+            cmt.flush()
+            cmt.close()
             print "---------------endfile-----------\n"
+
+
             editit = raw_input("Would you like to edit? Enter y/Y if so.\n")
             if editit == 'Y' or editit == 'y':
                 call([EDITOR, COMMENTFILE])
-                grade = raw_input("Did you change the grade? If so enter it below X/5. If not hit enter.\n")
-                if grade != '':
-                    while float(grade) > 5.0:
-                        grade = raw_input("Grade must be less than 5. What is the grade X/5?\n")
+                grade = getgrade("Did you change the grade? If so enter it below X/5. If not hit enter.\n")
+
             print '\n'
-            print '\n'
+
             os.chdir('..')
-            fout.writelines(grade)
-            fout.writelines('\n')
+            gf.writelines(grade)
+            gf.writelines('\n')
             escape = raw_input("To keep going hit enter or another key.\nTo quit and save ungraded files, press Q/q:")
             if (escape == 'Q') or (escape == 'q'):
                 keepgoing = False
-                fout.flush()
-                fout.close()
+                gf.flush()
+                gf.close()
+                
+
     if keepgoing:
-        fout.flush()
-        fout.close()
+        gf.flush()
+        gf.close()
+        
     if not keepgoing:
-        f2.flush()
-        f2.close()
+        ngf.flush()
+        ngf.close()
                 
         
 
