@@ -5,9 +5,7 @@ import sys
 import re
 import string
 from subprocess import call
-import tempfile
 
-#re_studentid_file = re.compile(r",[0-9]*,")
 re_studentid = re.compile(r"[0-9]{7,9}")
 
 def matchdir (string, dirlist):
@@ -92,6 +90,9 @@ def main():
             editit = raw_input("Would you like to edit? Enter y/Y if so.\n")
             if editit == 'Y' or editit == 'y':
                 call([EDITOR, COMMENTFILE])
+                grade = raw_input("Did you change the grade? If so enter it X/5:\n")
+                while float(grade) > 5.0:
+                    grade = raw_input("Grade must be less than 5. What is the grade X/5?\n")
             print '\n'
             print '\n'
             os.chdir('..')
