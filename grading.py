@@ -49,7 +49,7 @@ def main():
             if len(thematch) != 1:
                 "ERROR %r matches in Submission directories, expected 1" % len(td)
             theindex = submatch.index(thematch[0])
-            os.system("open "+ dircont[theindex``] + "/*" )
+            os.system("open "+ dircont[theindex] + "/*" )
             
             comment_header = "Comments on " + hwname + " for " + student_dirs[dir_index]
             comment_footer = "- graded by " + gradername
