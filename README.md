@@ -34,7 +34,7 @@ from smartsite (see 'R scripts' below).
 
 ## a workflow
 
-1. download a zip archive from smartsite using bulk_download.zip
+1. download a zip archive from smartsite into `bulk_download.zip`
 2. unpack it, which creates a single directory eg. to `Homework _ Lab 1`
 3. `cd` to that directory
 4. run `grading.py` as below (arguments to grade section 2 only)
