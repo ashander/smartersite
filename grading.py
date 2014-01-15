@@ -45,6 +45,8 @@ def openpdfanddoc(dir, listoffiles):
     ''' open pdf and doc files in the submission directory'''
     filestoopen  = [f for f in listoffiles if f.find('.pdf') != -1 or f.find('.doc') != -1]
     for f in filestoopen:
+        print "Opening " + f + " using default application.\n"
+        print "(...please be patient if this is the first one opened...)\n"
         filepath = os.path.join(os.getcwd(), dir, f)
         ## snippet below for opening using default app from stackoverflow users nick and sven
         ## http://stackoverflow.com/questions/434597/open-document-with-default-application-in-python
