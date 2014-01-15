@@ -135,64 +135,67 @@ def main():
     keepgoing = True
     for l in tograde:
         ID = re_studentid.search(l,)
-
         if ID and gradesection:
             username = re_studentusername.match(l,)
             ## need to strip , from match group. should find more generalized soln
-            if sectionlookup[username.group().strip(',')] != gradesection:
+            try:
+                section = sectionlookup[username.group().strip(',')]
+            except KeyError:
+                continue # the student has no section assigned
+            except:
+                section = gradesection #if something else happens, be a nice guy
+            if section != gradesection:
                 continue
-            
-        if (not ID) and keepgoing:
             ngf.writelines(l)
+        if (not ID) and keepgoing:
             gf.writelines(l)
-        else:
-            if not keepgoing:
-                ngf.writelines(l)
-
-        if ID and keepgoing:
-            gf.writelines(l.rstrip())
-            curstudent = matchdir(ID.group(), student_dirs)
-            os.chdir(curstudent)
-
-            submissionsdir = matchdir('Submission', os.listdir(os.getcwd()))
-            subdirfiles = os.listdir(submissionsdir)
-
-            openpdfanddoc(submissionsdir, subdirfiles)
+            ngf.writelines(l)
+        if ID:
             
-            comment_header = "Comments on " + hwname + " for " + curstudent 
+            if keepgoing:
+                gf.writelines(l.rstrip())
+                curstudent = matchdir(ID.group(), student_dirs)
+                os.chdir(curstudent)
 
-            output = writecomments(comment_header)
-            grade = getgrade("What is the grade X/5? (If no grade at this time hit enter.)\n")
-            
-            output.append("\nGrade is "+ grade + "/5.0" + '\n')            
-            output.append('\n' + comment_footer + '\n')
+                submissionsdir = matchdir('Submission', os.listdir(os.getcwd()))
+                subdirfiles = os.listdir(submissionsdir)
 
-            cmt = open(COMMENTFILE, 'r+')
-            print "Here is what your commentfile looks like:\n"
-            print "---------------beginfile-----------"
-            for o in output:
-                print o,
-                cmt.writelines(o)
-            cmt.flush()
-            cmt.close()
-            print "---------------endfile-----------\n"
+                openpdfanddoc(submissionsdir, subdirfiles)
+
+                comment_header = "Comments on " + hwname + " for " + curstudent 
+
+                output = writecomments(comment_header)
+                grade = getgrade("What is the grade X/5? (If no grade at this time hit enter.)\n")
+
+                output.append("\nGrade is "+ grade + "/5.0" + '\n')            
+                output.append('\n' + comment_footer + '\n')
+
+                cmt = open(COMMENTFILE, 'r+')
+                print "Here is what your commentfile looks like:\n"
+                print "---------------beginfile-----------"
+                for o in output:
+                    print o,
+                    cmt.writelines(o)
+                cmt.flush()
+                cmt.close()
+                print "---------------endfile-----------\n"
 
 
-            editit = raw_input("Would you like to edit? Enter y/Y if so.\n")
-            if editit == 'Y' or editit == 'y':
-                call([EDITOR, COMMENTFILE])
-                grade = getgrade("Did you change the grade? If so enter it below X/5. If not hit enter.\n")
+                editit = raw_input("Would you like to edit? Enter y/Y if so.\n")
+                if editit == 'Y' or editit == 'y':
+                    call([EDITOR, COMMENTFILE])
+                    grade = getgrade("Did you change the grade? If so enter it below X/5. If not hit enter.\n")
 
-            print '\n'
+                print '\n'
 
-            os.chdir('..')
-            gf.writelines(grade)
-            gf.writelines('\n')
-            escape = raw_input("To keep going hit enter or another key.\nTo quit and save ungraded files, press Q/q:")
-            if (escape == 'Q') or (escape == 'q'):
-                keepgoing = False
-                gf.flush()
-                gf.close()
+                os.chdir('..')
+                gf.writelines(grade)
+                gf.writelines('\n')
+                escape = raw_input("To keep going hit enter or another key.\nTo quit and save ungraded files, press Q/q:")
+                if (escape == 'Q') or (escape == 'q'):
+                    keepgoing = False
+                    gf.flush()
+                    gf.close()
                 
 
     if keepgoing:
