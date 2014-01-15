@@ -1,4 +1,5 @@
 #!/opt/local/bin/python
+# need python 2.7 or greater
 
 import os
 import sys
@@ -6,9 +7,13 @@ import re
 import string
 import csv
 from subprocess import call
+import argparse
+
+        
 
 
-# compile a global regex
+
+# compile a couple global regex
 re_studentid = re.compile(r"[0-9]{7,9}")
 re_studentusername = re.compile(r"[a-z]*,")
 
@@ -68,54 +73,19 @@ def writecomments(comment_header):
 def getgrade(graderequeststring):
     ''' get grade as string ''' 
     grade = raw_input(graderequeststring)
-    ## [todo] - handle non convertable input
+    ## [todo] - handle non convertable input other than ''
     if grade != '':
         while float(grade) > 5.0:
             grade = raw_input("Grade must be less than 5. What is the grade X/5?\n")
     return grade
            
-def main():
-    '''
-    python grading.py [infile] [gradefile] [hwname] [gradername] [gradesection] [sectionlut ='../sectionlut.csv'] [exitfile='notgraded.csv'] 
-    '''
-    # [todo] - should replace below with argparser module
-    try:
-        infile=sys.argv[1]
-    except:
-        infile = 'grades.csv'
-    try:
-        gradefile = sys.argv[2]
-    except:
-        gradefile = infile+'.bak'
-        print "graded output will be put in grades.csv.bak\n"
-    try:
-        hwname = sys.argv[3]
-    except:
-        hwname = 'Comments on Homework ___ '
+def main(infile, gradefile, hwname, gradername, gradesection, lutfile, exitfile):
+    # args contains: infile, gradefile, hwname, gradername, gradesection, lutfile, exitfile
 
-    try:
-        gradername= sys.argv[4]
-    except:
-        gradername = os.uname()[1]
-    try:
-        gradesection = sys.argv[5]
-        if int(gradesection):
-            gradesection = 'A0' + gradesection
-    except:
-        gradesection = False
-    try:
-        lutfile = sys.argv[6]
-        print lutfile
-    except:
-        lutfile = "../sectionlut.csv"
-    try:
-        exitfile=sys.argv[7]
-    except:
-        exitfile='notgraded.csv'
-        
-
+    gradesection = 'A0' + str(gradesection)
+    print gradesection
     sectionlookup = sectiondict(lutfile)
-    print sectionlookup
+
     cwd = os.getcwd()
     student_dirs = os.listdir(cwd)
 
@@ -135,6 +105,7 @@ def main():
     keepgoing = True
     for l in tograde:
         ID = re_studentid.search(l,)
+
         if ID and gradesection:
             username = re_studentusername.match(l,)
             ## need to strip , from match group. should find more generalized soln
@@ -147,11 +118,13 @@ def main():
             if section != gradesection:
                 continue
             ngf.writelines(l)
-        if (not ID) and keepgoing:
-            gf.writelines(l)
+
+        if (not ID):
             ngf.writelines(l)
+            if keepgoing:
+                gf.writelines(l)
+
         if ID:
-            
             if keepgoing:
                 gf.writelines(l.rstrip())
                 curstudent = matchdir(ID.group(), student_dirs)
@@ -209,8 +182,32 @@ def main():
         
 
 
-        
+
+
 if __name__=='__main__':
-    main()
+    parser = argparse.ArgumentParser(description = "do grading on an unpacked zip as provided by smartsite")
+    parser.add_argument(
+        'infile', metavar='input_file_to_grade', type=str, help='input file with grades, eg grades.csv provided by smartsite',
+        default='grades.csv')
+    parser.add_argument(
+        'gradefile', metavar='graded_output_file', type=str, help='output file for grades, eg gradesout.csv',
+        default='grades.csv.bak')
+    parser.add_argument(
+        'hwname', metavar='homework_name_for_header', type=str, help='name of homework for header')
+    parser.add_argument(
+        'gradername', metavar='grader_name_for_footer', type=str, help='name of grader for footer',
+        default=os.uname()[1])
+    parser.add_argument(
+        'gradesection', metavar='section_to_grade', type=int, help='section number to grade',
+        default=False)
+    parser.add_argument(
+        'lutfile', metavar='lookup_table_in_csv', type=str,
+        help='file with columns of user ids and section numbers')
+    parser.add_argument(
+        'exitfile', metavar='ungraded_output_file', type=str,
+        help='output file for ungraded assignments during a grading session',
+        default='notgraded.csv')
 
-
+    args = parser.parse_args()
+    print type(args.gradesection)
+    main(args.infile, args.gradefile, args.hwname, args.gradername, args.gradesection, args.lutfile, args.exitfile)
