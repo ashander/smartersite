@@ -83,7 +83,6 @@ def main(infile, gradefile, hwname, gradername, gradesection, lutfile, exitfile)
     # args contains: infile, gradefile, hwname, gradername, gradesection, lutfile, exitfile
 
     gradesection = 'A0' + str(gradesection)
-    print gradesection
     sectionlookup = sectiondict(lutfile)
 
     cwd = os.getcwd()
@@ -117,7 +116,6 @@ def main(infile, gradefile, hwname, gradername, gradesection, lutfile, exitfile)
                 section = gradesection #if something else happens, be a nice guy
             if section != gradesection:
                 continue
-            ngf.writelines(l)
 
         if (not ID):
             ngf.writelines(l)
@@ -185,7 +183,18 @@ def main(infile, gradefile, hwname, gradername, gradesection, lutfile, exitfile)
 
 
 if __name__=='__main__':
-    parser = argparse.ArgumentParser(description = "do grading on an unpacked zip as provided by smartsite")
+    parser = argparse.ArgumentParser(description =
+                                     '''Do grading in a directory tree from an unpacked zip as provided by smartsite.
+                                     This command should be executed at the root of the tree with grades.csv.''')
+    section = parser.add_argument_group('section')
+    section.add_argument('-s', '--gradesection',
+        metavar='section_to_grade', type=int, help="section number to grade (integer, 'A0' will be added). Requires an lutfile to work.",
+        default=False)
+    section.add_argument('-lu', '--lutfile',
+        metavar='lookup_table_in_csv', type=str,
+        help='File with columns of user ids and section numbers. Only valid with -s specified.')
+
+    
     parser.add_argument(
         'infile', metavar='input_file_to_grade', type=str, help='input file with grades, eg grades.csv provided by smartsite',
         default='grades.csv')
@@ -196,18 +205,19 @@ if __name__=='__main__':
         'hwname', metavar='homework_name_for_header', type=str, help='name of homework for header')
     parser.add_argument(
         'gradername', metavar='grader_name_for_footer', type=str, help='name of grader for footer',
-        default=os.uname()[1])
-    parser.add_argument(
-        'gradesection', metavar='section_to_grade', type=int, help='section number to grade',
-        default=False)
-    parser.add_argument(
-        'lutfile', metavar='lookup_table_in_csv', type=str,
-        help='file with columns of user ids and section numbers')
+        default=os.uname()[1])    
     parser.add_argument(
         'exitfile', metavar='ungraded_output_file', type=str,
         help='output file for ungraded assignments during a grading session',
         default='notgraded.csv')
 
     args = parser.parse_args()
-    print type(args.gradesection)
+    if (args.gradesection and not args.lutfile) or (not args.gradesection and args.lutfile):
+         parser.print_help()
+         sys.exit()
+        
+    if args.gradesection:
+        print "grading section A0 " + str(args.gradesection)
+        print "using lookup table based on " + args.lutfile
+        
     main(args.infile, args.gradefile, args.hwname, args.gradername, args.gradesection, args.lutfile, args.exitfile)
