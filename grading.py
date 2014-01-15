@@ -4,10 +4,14 @@ import os
 import sys
 import re
 import string
+import csv
 from subprocess import call
-import itertools
 
+
+# compile a global regex
 re_studentid = re.compile(r"[0-9]{7,9}")
+re_studentusername = re.compile(r"[a-z]*,")
+
 
 def matchdir (string, dirlist):
     '''
@@ -22,6 +26,18 @@ def matchdir (string, dirlist):
     else:
         return outlist.pop()
 
+def sectiondict (filename):
+    ''' filename should be loc for LUT with student
+    user ids as first column'''
+    with open(filename, 'r') as f:
+        res = {}
+
+        reader = csv.reader(f)
+        reader.next()
+        for row in reader:
+            k, v = row
+            res[k] = v
+        return res
     
 def openpdfanddoc(dir, listoffiles):
     ''' open pdf and doc files in teh submission directory'''
@@ -60,7 +76,7 @@ def getgrade(graderequeststring):
            
 def main():
     '''
-    python grading.py [infile] [gradefile] [hwname] [gradername] [exitfile='notgraded.csv']
+    python grading.py [infile] [gradefile] [hwname] [gradername] [gradesection] [sectionlut ='../sectionlut.csv'] [exitfile='notgraded.csv'] 
     '''
     # [todo] - should replace below with argparser module
     try:
@@ -82,10 +98,24 @@ def main():
     except:
         gradername = os.uname()[1]
     try:
-        exitfile=sys.argv[5]
+        gradesection = sys.argv[5]
+        if int(gradesection):
+            gradesection = 'A0' + gradesection
+    except:
+        gradesection = False
+    try:
+        lutfile = sys.argv[6]
+        print lutfile
+    except:
+        lutfile = "../sectionlut.csv"
+    try:
+        exitfile=sys.argv[7]
     except:
         exitfile='notgraded.csv'
+        
 
+    sectionlookup = sectiondict(lutfile)
+    print sectionlookup
     cwd = os.getcwd()
     student_dirs = os.listdir(cwd)
 
@@ -105,6 +135,13 @@ def main():
     keepgoing = True
     for l in tograde:
         ID = re_studentid.search(l,)
+
+        if ID and gradesection:
+            username = re_studentusername.match(l,)
+            ## need to strip , from match group. should find more generalized soln
+            if sectionlookup[username.group().strip(',')] != gradesection:
+                continue
+            
         if (not ID) and keepgoing:
             ngf.writelines(l)
             gf.writelines(l)
