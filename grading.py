@@ -44,8 +44,11 @@ def sectiondict (filename):
 def openpdfanddoc(dir, listoffiles):
     ''' open pdf and doc files in the submission directory'''
     filestoopen  = [f for f in listoffiles if f.find('.pdf') != -1 or f.find('.doc') != -1]
+    if len(filestoopen) == 0:
+        print "No submissions found\n"
+        return False
     for f in filestoopen:
-        print "Opening " + f + " using default application.\n"
+        print "Opening " + f + " using default application."
         print "(...please be patient if this is the first one opened...)\n"
         filepath = os.path.join(os.getcwd(), dir, f)
         ## snippet below for opening using default app from stackoverflow users nick and sven
@@ -56,6 +59,7 @@ def openpdfanddoc(dir, listoffiles):
             os.startfile(filepath)
         elif os.name == 'posix':
             call(('xdg-open', filepath))
+    return True
 
 def writecomments(comment_header):
     ''' until user types q/Q/enter, solicit comments and put them on new 'lines'
@@ -131,7 +135,10 @@ def main(infile, gradefile, hwname, gradername, gradesection, lutfile, exitfile)
                 submissionsdir = matchdir('Submission', os.listdir(os.getcwd()))
                 subdirfiles = os.listdir(submissionsdir)
 
-                openpdfanddoc(submissionsdir, subdirfiles)
+                print '\nNow grading ' + curstudent +'\n'
+                if not openpdfanddoc(submissionsdir, subdirfiles):
+                    os.chdir('..') # get back to root and do next student
+                    continue
 
                 comment_header = "Comments on " + hwname + " for " + curstudent 
 
