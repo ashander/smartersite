@@ -123,7 +123,6 @@ def main(infile, gradefile, hwname, gradername, gradesection, lutfile, exitfile)
 
         if ID:
             if keepgoing:
-                gf.writelines(l.rstrip())
                 curstudent = matchdir(ID.group(), student_dirs)
                 os.chdir(curstudent)
 
@@ -154,13 +153,19 @@ def main(infile, gradefile, hwname, gradername, gradesection, lutfile, exitfile)
                 editit = raw_input("Would you like to edit? Enter y/Y if so.\n")
                 if editit == 'Y' or editit == 'y':
                     call([EDITOR, COMMENTFILE])
-                    grade = getgrade("Did you change the grade? If so enter it below X/5. If not hit enter.\n")
-
+                    graderev = getgrade("Did you change the grade? If so enter it below X/5. If not hit enter.\n")
+                    if graderev != '':
+                        grade = graderev
                 print '\n'
 
                 os.chdir('..')
-                gf.writelines(grade)
-                gf.writelines('\n')
+                if grade != '':
+                    gf.writelines(l.rstrip())
+                    gf.writelines(grade)
+                    gf.writelines('\n')
+                else:
+                    ngf.writelines(l)
+
                 escape = raw_input("To keep going hit enter or another key.\nTo quit and save ungraded files, press Q/q:")
                 if (escape == 'Q') or (escape == 'q'):
                     keepgoing = False
