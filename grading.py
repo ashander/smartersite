@@ -1,4 +1,6 @@
 #!/opt/local/bin/python
+# can do as a standalone if permissions set and 
+# above points to python install
 # need python 2.7 or greater
 
 import os
@@ -192,7 +194,10 @@ if __name__=='__main__':
         default=False)
     section.add_argument('-lu', '--lutfile',
         metavar='lookup_table_in_csv', type=str,
-        help='File with columns of user ids and section numbers. Only valid with -s specified.')
+        help=
+             '''File with columns of user ids and section numbers. Only valid with -s specified.
+                A properly formatted file can be made from smartsite-provided Excel file using
+                xlstocsv.R followed by sectioncsvtoLUT.R''')
 
     
     parser.add_argument(
