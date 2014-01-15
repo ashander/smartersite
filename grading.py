@@ -11,14 +11,9 @@ import csv
 from subprocess import call
 import argparse
 
-        
-
-
-
 # compile a couple global regex
 re_studentid = re.compile(r"[0-9]{7,9}")
 re_studentusername = re.compile(r"[a-z]*,")
-
 
 def matchdir (string, dirlist):
     '''
@@ -47,10 +42,12 @@ def sectiondict (filename):
         return res
     
 def openpdfanddoc(dir, listoffiles):
-    ''' open pdf and doc files in teh submission directory'''
+    ''' open pdf and doc files in the submission directory'''
     filestoopen  = [f for f in listoffiles if f.find('.pdf') != -1 or f.find('.doc') != -1]
     for f in filestoopen:
         filepath = os.path.join(os.getcwd(), dir, f)
+        ## snippet below for opening using default app from stackoverflow users nick and sven
+        ## http://stackoverflow.com/questions/434597/open-document-with-default-application-in-python
         if sys.platform.startswith('darwin'):
             call(('open', filepath))
         elif os.name == 'nt':
