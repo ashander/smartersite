@@ -180,6 +180,10 @@ def main(infile, gradefile, hwname, gradername, gradesection, lutfile, exitfile)
                     keepgoing = False
                     gf.flush()
                     gf.close()
+            else:
+                # not keepgoing
+                ngf.writelines(l)
+                
                 
 
     if keepgoing:
