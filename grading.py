@@ -116,10 +116,12 @@ def main(infile, gradefile, hwname, gradername, gradesection, lutfile, exitfile)
             try:
                 section = sectionlookup[username.group().strip(',')]
             except KeyError:
+                ngf.writelines(l)
                 continue # the student has no section assigned
             except:
                 section = gradesection #if something else happens, be a nice guy
             if section != gradesection:
+                ngf.writelines(l)
                 continue
 
         if (not ID):
