@@ -54,6 +54,7 @@ def openpdfanddoc(dir, listoffiles):
         ## snippet below for opening using default app from stackoverflow users nick and sven
         ## http://stackoverflow.com/questions/434597/open-document-with-default-application-in-python
         if sys.platform.startswith('darwin'):
+            ## call(('file',filepath)) # might try this to print out *doc stats (eg editing)
             call(('open', filepath))
         elif os.name == 'nt':
             os.startfile(filepath)
@@ -67,12 +68,17 @@ def writecomments(comment_header):
     print the full file with each new line
     '''
     output = []
-    comment = comment_header + '\n'
+    comment = comment_header + '\n '
+    ctr = 0
     while (comment != 'Q') and (comment != 'q') and (comment != ''):
+        if ctr > 0:
+            output.append(str(ctr) + ") ")
         output.append(comment + '\n')
         for o in output:
             print o,
-        comment = raw_input("Type a comment (or q/Q/enter to finish and assign a grade)\n")
+        ctr += 1
+        comment = raw_input("Type a comment (or q/Q/enter to finish and assign a grade)\n"+str(ctr) + ") ")
+
     return output
 
 def getgrade(graderequeststring):
@@ -83,9 +89,27 @@ def getgrade(graderequeststring):
         while float(grade) > 5.0:
             grade = raw_input("Grade must be less than 5. What is the grade X/5?\n")
     return grade
+
+def deductpoints(rubriclist):
+    output = []
+    deduction = 'y'
+    for r in rubriclist:
+        print r;
+        deduction = raw_input("Type 'y' if deduction, 'enter' if not, q/Q/n to finish\n")
+        if (deduction == 'y'):
+            output.append(r + '\n')
+        if (deduction == 'Q') or (deduction == 'q') or (deduction =='n'):
+            for o in output:
+                print o.rstrip()
+            return output
+    for o in output:
+        print o.rstrip()
+    return output
+        
            
-def main(infile, gradefile, hwname, gradername, gradesection, lutfile, exitfile):
+def grading(infile, gradefile, hwname, gradername, gradesection, lutfile, exitfile, rubricfile):
     # args contains: infile, gradefile, hwname, gradername, gradesection, lutfile, exitfile
+    # these values are False if optional arguments weren't included
 
     gradesection = 'A0' + str(gradesection)
     sectionlookup = sectiondict(lutfile)
@@ -105,6 +129,12 @@ def main(infile, gradefile, hwname, gradername, gradesection, lutfile, exitfile)
 
     gf = open(gradefile,'w')
     ngf = open(exitfile, 'w')
+
+    if rubricfile:
+        rf = open(rubricfile,'r')
+        rubriclist = rf.readlines()
+        rf.close()
+
 
     keepgoing = True
     for l in tograde:
@@ -138,6 +168,10 @@ def main(infile, gradefile, hwname, gradername, gradesection, lutfile, exitfile)
                 subdirfiles = os.listdir(submissionsdir)
 
                 print '\nNow grading ' + curstudent +'\n'
+                if rubricfile:
+                    print '\n Potential deductions:'
+                    for r in rubriclist:
+                        print r.rstrip()
                 if not openpdfanddoc(submissionsdir, subdirfiles):
                     os.chdir('..') # get back to root and do next student
                     continue
@@ -145,6 +179,9 @@ def main(infile, gradefile, hwname, gradername, gradesection, lutfile, exitfile)
                 comment_header = "Comments on " + hwname + " for " + curstudent 
 
                 output = writecomments(comment_header)
+                if rubricfile:
+                    output = output + deductpoints(rubriclist)
+                    
                 grade = getgrade("What is the grade X/5? (If no grade at this time hit enter.)\n")
 
                 output.append("\nGrade is "+ grade + "/5.0" + '\n')            
@@ -215,6 +252,11 @@ if __name__=='__main__':
              '''File with columns of user ids and section numbers. Only valid with -s specified.
                 A properly formatted file can be made from smartsite-provided Excel file using
                 xlstocsv.R followed by sectioncsvtoLUT.R''')
+    section.add_argument('-ru', '--rubricfile',
+        metavar='rubric.txt', type=str,
+        help=
+             '''Rubric file for grading, should contain N lines, each with starting with
+             "-1 for" and then listing the reason for a point deduction''')
 
     
     parser.add_argument(
@@ -242,4 +284,6 @@ if __name__=='__main__':
         print "grading section A0 " + str(args.gradesection)
         print "using lookup table based on " + args.lutfile
         
-    main(args.infile, args.gradefile, args.hwname, args.gradername, args.gradesection, args.lutfile, args.exitfile)
+    
+    grading(args.infile, args.gradefile, args.hwname, args.gradername,
+            args.gradesection, args.lutfile, args.exitfile, args.rubricfile)

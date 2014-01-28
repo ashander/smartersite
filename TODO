@@ -1,0 +1,4 @@
+Encode workflow for repeated grading cycles somehow. Maybe Make?
+Deal with EOFError from raw_input elegantly (ie write notgraded)
+
+
